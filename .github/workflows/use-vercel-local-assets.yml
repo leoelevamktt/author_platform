@@ -1,0 +1,42 @@
+name: Use Vercel local assets
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  local-assets:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Point images to local assets
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          text = p.read_text(encoding='utf-8')
+          text = text.replace("const RAW='https://raw.githubusercontent.com/leoelevamktt/author_platform/main/assets/';", "const RAW='/assets/';")
+          text = text.replace("author_platform_live_v7", "author_platform_live_v8")
+          p.write_text(text, encoding='utf-8')
+          print('updated index.html to use /assets/')
+          PY
+      - name: Verify
+        run: |
+          grep -n "const RAW='/assets/'" index.html
+          grep -n "author_platform_live_v8" index.html
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git add index.html
+          git commit -m "Serve product images from Vercel assets [skip ci]"
+          git push
