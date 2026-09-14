@@ -1,0 +1,53 @@
+name: Use clean image names
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  clean-image-names:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Replace long uploaded names with clean asset names
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          replacements = {
+            'ChatGPT%20Image%2014%20de%20set.%20de%202026%2C%2010_51_20%20%281%29.png': 'entre-linhas-mares.png',
+            'ChatGPT%20Image%2014%20de%20set.%20de%202026%2C%2010_51_20%20%282%29.png': 'depois-da-chuva.png',
+            'ChatGPT%20Image%2014%20de%20set.%20de%202026%2C%2010_51_20%20%283%29.png': 'caderno-de-madrugada.png',
+            'ChatGPT%20Image%2014%20de%20set.%20de%202026%2C%2010_51_21%20%284%29.png': 'horizonte-de-vidro.png',
+            'ChatGPT%20Image%2014%20de%20set.%20de%202026%2C%2010_51_21%20%285%29.png': 'casa-vazia.png',
+            'ChatGPT%20Image%2014%20de%20set.%20de%202026%2C%2010_51_21%20%286%29.png': 'pequenas-distancias.png',
+            'ChatGPT%20Image%2014%20de%20set.%20de%202026%2C%2010_51_51.png': 'theo-avelar.png',
+            'author_platform_live_v8': 'author_platform_live_v9'
+          }
+          for filename in ['index.html','app.js']:
+            path=Path(filename)
+            if not path.exists(): continue
+            text=path.read_text(encoding='utf-8')
+            old=text
+            for a,b in replacements.items(): text=text.replace(a,b)
+            if text != old:
+              path.write_text(text,encoding='utf-8')
+              print('updated', filename)
+          PY
+      - name: Verify clean image paths
+        run: |
+          grep -n "entre-linhas-mares.png" index.html
+          grep -n "theo-avelar.png" index.html
+          if grep -q "ChatGPT%20Image" index.html; then exit 1; fi
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then exit 0; fi
+          git add index.html app.js
+          git commit -m "Use clean product image paths [skip ci]"
+          git push
