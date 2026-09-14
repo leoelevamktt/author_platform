@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const STORAGE_KEY = 'author_platform_state_v1';
+  const STORAGE_KEY = 'author_platform_state_v7';
   const defaultState = {
     profile: {
       siteName: 'Casa Autoral',
