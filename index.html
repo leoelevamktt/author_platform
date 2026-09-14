@@ -95,5 +95,6 @@ $('#cardNumber').oninput=e=>{let v=e.target.value.replace(/\D/g,'').slice(0,16);
 $('#checkoutForm').onsubmit=e=>{e.preventDefault();const method=document.querySelector('input[name="paymentMethod"]:checked')?.value;if(method==='card'&&$('#cardNumber').value.replace(/\D/g,'').length<16){alert('Digite 16 dígitos para simular o cartão.');return}$('#checkoutMain').hidden=true;$('#checkoutProcessing').hidden=false;$('#processingStatus').textContent='Validando dados do pedido...';setTimeout(()=>$('#processingStatus').textContent=method==='pix'?'Confirmando pagamento Pix...':'Autorizando cartão de crédito...',700);setTimeout(()=>approveSimulatedPayment(e.target),1600)};
 document.addEventListener('click',e=>{const b=e.target.closest('[data-download]');if(b)downloadPurchased(b.dataset.download)});render();
 </script>
+<script src="/admin-enhancements.js?v=12"></script>
 </body>
 </html>
