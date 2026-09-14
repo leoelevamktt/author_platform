@@ -1,0 +1,69 @@
+name: Fix real images
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix-images:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Replace placeholder image paths
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          replacements = {
+              'entre-linhas-mares.webp': 'ChatGPT%20Image%2014%20de%20set.%20de%202026%2C%2010_51_20%20%281%29.png',
+              'depois-da-chuva.webp': 'ChatGPT%20Image%2014%20de%20set.%20de%202026%2C%2010_51_20%20%282%29.png',
+              'caderno-de-madrugada.webp': 'ChatGPT%20Image%2014%20de%20set.%20de%202026%2C%2010_51_20%20%283%29.png',
+              'horizonte-de-vidro.webp': 'ChatGPT%20Image%2014%20de%20set.%20de%202026%2C%2010_51_21%20%284%29.png',
+              'casa-vazia.webp': 'ChatGPT%20Image%2014%20de%20set.%20de%202026%2C%2010_51_21%20%285%29.png',
+              'pequenas-distancias.webp': 'ChatGPT%20Image%2014%20de%20set.%20de%202026%2C%2010_51_21%20%286%29.png',
+              'theo-avelar.webp': 'ChatGPT%20Image%2014%20de%20set.%20de%202026%2C%2010_51_51.png',
+              "author_platform_live_v3": "author_platform_live_v7",
+              "author_platform_state_v1": "author_platform_state_v7",
+          }
+
+          for filename in ['index.html', 'app.js']:
+              path = Path(filename)
+              if not path.exists():
+                  continue
+              text = path.read_text(encoding='utf-8')
+              before = text
+              for old, new in replacements.items():
+                  text = text.replace(old, new)
+              if text != before:
+                  path.write_text(text, encoding='utf-8')
+                  print(f'updated {filename}')
+              else:
+                  print(f'no changes needed in {filename}')
+          PY
+
+      - name: Verify image references
+        run: |
+          grep -n "ChatGPT%20Image" index.html | head -20
+          if grep -q "entre-linhas-mares.webp\|theo-avelar.webp" index.html; then
+            echo "Old image references remain in index.html"
+            exit 1
+          fi
+
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git add index.html app.js
+          git commit -m "Fix product and author image assets [skip ci]"
+          git push
